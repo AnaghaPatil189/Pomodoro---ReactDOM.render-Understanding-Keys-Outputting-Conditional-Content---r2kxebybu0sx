@@ -1,101 +1,94 @@
-import React, {useState} from 'react';
-import '../styles/App.css'
+import React ,{useState, useEffect} from 'react';
 
 function App() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [gender, setGender] = useState('male');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
-  const [userName, setUserName] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [phoneNumberError, setPhoneNumberError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [emptyError, setEmptyError] = useState('');
-  const [genderError, setGenderError] = useState('');
+  const [workDuration, setWorkDuration] = useState(25);
+  const [breakDuration, setBreakDuration] = useState(5);
+  const [flag , setFlag] =  useState(false);
+  const [worksecond, setWorkSecond] = useState(1500);
+  const [breaksecond, setBreakSecond] = useState(300);
+  const [type, setType] = useState('work');
+  const [resetFlag, setResetFalg] = useState(true);
 
-  const resetErrorDefault = () =>{
-      setNameError('');
-      setPhoneNumberError('');
-      setPasswordError('');
-      setEmailError('');
-      setEmptyError('');
-      setGenderError('');
+  useEffect(() =>{
+    if(flag && type === 'work'){
+      if(worksecond > 0) {
+        const timer = setTimeout(() => setWorkSecond(worksecond - 1), 1000);
+        return () => clearTimeout(timer);
+      }
+      if(worksecond === 0) {
+        alert('work duration is over')
+        setType('break');
+        setWorkSecond(workDuration * 60);
+      }
+    }
+    if(flag && type === 'break'){
+      if(breaksecond > 0) {
+        const timer = setTimeout(() => setBreakSecond(breaksecond - 1), 1000);
+        return () => clearTimeout(timer);
+      }
+      if(breaksecond === 0) {
+        alert('break duration is over');
+        setType('work');
+        setBreakSecond(breakDuration * 60);
+      }
+    }
+  },[flag, type, worksecond, breaksecond, workDuration, breakDuration]);
+
+  const reset = () =>{
+      setResetFalg(true);
+      setFlag(false);
+      setType('work');
+      setWorkDuration(25);
+      setBreakDuration(5);
+      setBreakSecond(300);
+      setWorkSecond(1500);
   }
-  const validate = () => {
-    if(name === '' || email === '' || gender === '' || phoneNumber === '' || password === ''){
-      setEmptyError('All fields are mandatory');
-      setUserName('');
-      return false;
-    }
-    if(!name.match(/^[A-Za-z0-9- ]+$/)) {
-      setNameError('Name is not alphanumeric');
-      setUserName('');
-      return false;
+
+  const convertToStandardFormat = (sec) =>{
+    let m = parseInt(sec / 60).toString();
+    let s = parseInt(sec % 60).toString();
+    if(m.length === 1) m = '0' + m;
+    if(s.length === 1) s = '0' + s;
+    return m + ":" + s;
   }
-    if(!email.includes('@')){
-      setEmailError('email must contain @');
-      setUserName('');
-      return false;
+  const validateData = (data) =>{
+    if(!isNaN(data) && parseInt(data) >= 0){
+      return parseInt(data);
     }
-    if (!gender.match(/male|female|others/i)) {
-      setGenderError('Please identify as male, female or others');
-      setUserName('');
-      return false;
-    }
-    if(!phoneNumber.match(/^[0-9]+$/)){
-      setPhoneNumberError('Phone Number must contain only numbers');
-      setUserName('');
-      return false;
-    }
-    if(password.length < 6){
-      setPasswordError('Password must contain atleast 6 letters');
-      setUserName('');
-      return false;
-    }
-    return true;
+    else
+      return '';
   }
-  const handleSubmit = (e) => {
+  const setDuration = (e) =>{
     e.preventDefault();
-    resetErrorDefault();
-    const isValid = validate();
-    if(isValid) {
-      setName('');
-      setEmail('');
-      setGender('');
-      setPhoneNumber('');
-      setPassword('');
-      resetErrorDefault();
-      // console.log(name, email, gender, phoneNumber, password);
-      setUserName(email.substr(0, email.indexOf('@')));
+    if(breakDuration + workDuration <= 0){
+      reset();
+      return ;
     }
+    setResetFalg(false);
+    setType('work');
+    setWorkSecond(workDuration * 60);
+    setBreakSecond(breakDuration * 60);
   }
-
   return (
-    <div className="App">
-        <form onSubmit={handleSubmit}>
-          <input data-testid='name' type='text' placeholder='name' value={name} onChange={(e) => setName(e.target.value)}></input>
-          <span>{nameError}</span>
-          <input data-testid='email' type='text' placeholder='email' value={email} onChange={(e) => setEmail(e.target.value)}></input>
-          <span>{emailError}</span>
-          <select data-testid='gender' name="gender" value={gender} onChange={(e) => setGender(e.target.value)}>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-          <span>{genderError}</span>
-          <input data-testid='phoneNumber' type='text' placeholder='phone number' value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}></input>
-          <span>{phoneNumberError}</span>
-          <input data-testid='password' type='password' placeholder='password' value={password} onChange={(e) => setPassword(e.target.value)}></input>
-          <span>{passwordError}</span>
-          <span>{emptyError}</span>
-          <input type="submit" data-testid='submit' value="Submit" />
+    <div className="App" style={{textAlign: "center"}}>
+      <div className='clock'>
+      <h1 className='timer'>{(type === 'work') ? convertToStandardFormat(worksecond): convertToStandardFormat(breaksecond) }</h1>
+      <h3>{(type === 'work') ? 'Work' : 'Break'}-Time</h3>
+      </div>
+      <div className='control'>
+      <button data-testid='start-btn' key='start' onClick={() => {setFlag(true); setResetFalg(false)}} disabled={flag} >start</button>
+      <button data-testid='stop-btn' key='stop' onClick={() => {setFlag(false); setResetFalg(false)}} disabled={!flag}>Stop</button>
+      <button data-testid='reset-btn' key='reset' onClick={() => {reset()}} disabled={resetFlag}>Reset</button>
+      </div>
+      <br></br>
+      <div className='parameters'>
+        <form onSubmit={setDuration}>
+        <input data-testid='work-duration' placeholder='work duration' required type='Number' value={workDuration} disabled={flag} onChange={(e) => setWorkDuration(validateData(e.target.value))}></input>
+        <input data-testid='break-duration' placeholder='break duration' required type='Number' value={breakDuration} disabled={flag} onChange={(e) => setBreakDuration(validateData(e.target.value))}></input>
+        <button data-testid='set-btn' type='submit' disabled={flag}>set</button>
         </form>
-        <div className='username'>
-          <h2> { (userName) ? "Hello " + (userName) : '' }</h2>
-        </div>
-    </div>
+      </div>
+      </div>
   );
 }
 
